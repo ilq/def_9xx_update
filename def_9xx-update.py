@@ -11,6 +11,8 @@ URL_DEF_9XX = 'https://rossvyaz.ru/data/DEF-9xx.csv'
 REGION = 'Кировская обл.'
 MYSQL_CONFIG = 'mysql_config.json'
 
+Def_9xx_NamedTuple = namedtuple('Def_9xx_NamedTuple', 'prefix_start prefix_end region')
+
 def get_def_9xx(url):
 	response = urllib2.urlopen(url)
 	def_9xx_csv = csv.reader(response, delimiter=';')
@@ -18,7 +20,6 @@ def get_def_9xx(url):
 
 
 def parse_def_9xx(def_9xx_csv):
-	Def_9xx_NamedTuple = namedtuple('Def_9xx_NamedTuple', 'prefix_start prefix_end region')
 	def_9xx_list_namedtuple = []
 	for item in def_9xx_csv:
 		item_def_9xx_namedtuple = Def_9xx_NamedTuple(
