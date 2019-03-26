@@ -18,10 +18,14 @@ def get_def_9xx(url):
 
 
 def parse_def_9xx(def_9xx_csv):
-	Def_9xx_NamedTuple = namedtuple('Def_9xx_NamedTuple', 'prefix start end count operator region')
+	Def_9xx_NamedTuple = namedtuple('Def_9xx_NamedTuple', 'prefix_start prefix_end region')
 	def_9xx_list_namedtuple = []
 	for item in def_9xx_csv:
-		def_9xx_list_namedtuple.append(Def_9xx_NamedTuple._make(item[:6]))
+		item_def_9xx_namedtuple = Def_9xx_NamedTuple(
+			item[0]+item[1],
+			item[0]+item[2],
+			item[5])
+		def_9xx_list_namedtuple.append(item_def_9xx_namedtuple)
 	return def_9xx_list_namedtuple
 
 
@@ -76,6 +80,7 @@ def main():
 	filename_mysql_config = MYSQL_CONFIG
 	mysql_config = get_mysql_config(filename_mysql_config)
 	current_def_9xx = get_current_def_9xx(mysql_config)
+
 	new_def_9xx, old_def_9xx = diff_def_9xx(region_def_9xx, current_def_9xx, ['num1', 'num2'])
 	delete_old_def_9xx(old_def_9xx)
 	insert_new_def_9xx(new_def_9xx)
