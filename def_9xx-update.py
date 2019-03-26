@@ -4,6 +4,7 @@ import sys
 import urllib2
 import csv
 import json
+import MySQLdb
 from collections import namedtuple
 
 URL_DEF_9XX = 'https://rossvyaz.ru/data/DEF-9xx.csv'
@@ -33,13 +34,27 @@ def get_region(def_9xx_list_namedtuple, region):
 
 
 def get_mysql_config(filename_mysql_config):
-	print filename_mysql_config
+	MysqlConfig = namedtuple('MysqlConfig', 'server user password database table')
 	with open(filename_mysql_config) as f:
-		return json.loads(f.read())
+		json_mysql_config = json.loads(f.read())
+		return MysqlConfig(**json_mysql_config)
 
 
 def get_current_def_9xx(mysql_config):
-	pass
+	db = MySQLdb.connect(
+			host=mysql_config.server,
+			user=mysql_config.user,
+			passwd=mysql_config.password,
+			db=mysql_config.database,
+			use_unicode=True,
+			charset="utf8")
+	cursor = db.cursor()
+	query = "SELECT num1, num2, operator FROM %s where priority < 100;" % mysql_config.table
+	cursor.execute(query)
+	current_def_9xx = cursor.fetchall()
+	db.close()
+	return current_def_9xx
+
 
 
 def diff_def_9xx(first_def_9xx, second_def_9xx, fields):
