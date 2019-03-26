@@ -84,7 +84,6 @@ def main():
 	filename_mysql_config = MYSQL_CONFIG
 	mysql_config = get_mysql_config(filename_mysql_config)
 	current_def_9xx = get_current_def_9xx(mysql_config)
-	print current_def_9xx
 	new_def_9xx, old_def_9xx = diff_def_9xx(region_def_9xx, current_def_9xx, ['num1', 'num2'])
 	delete_old_def_9xx(old_def_9xx)
 	insert_new_def_9xx(new_def_9xx)
