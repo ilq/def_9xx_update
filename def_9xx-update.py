@@ -56,8 +56,11 @@ def get_current_def_9xx(mysql_config):
 	cursor = db.cursor()
 	query = "SELECT num1, num2, operator FROM %s where priority < 100;" % mysql_config.table
 	cursor.execute(query)
-	current_def_9xx = cursor.fetchall()
+	result = cursor.fetchall()
 	db.close()
+	current_def_9xx = []
+	for item in result:
+		current_def_9xx.append(Def_9xx_NamedTuple(*item))
 	return current_def_9xx
 
 
@@ -81,7 +84,7 @@ def main():
 	filename_mysql_config = MYSQL_CONFIG
 	mysql_config = get_mysql_config(filename_mysql_config)
 	current_def_9xx = get_current_def_9xx(mysql_config)
-
+	print current_def_9xx
 	new_def_9xx, old_def_9xx = diff_def_9xx(region_def_9xx, current_def_9xx, ['num1', 'num2'])
 	delete_old_def_9xx(old_def_9xx)
 	insert_new_def_9xx(new_def_9xx)
