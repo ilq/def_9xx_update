@@ -11,7 +11,7 @@ URL_DEF_9XX = 'https://rossvyaz.ru/data/DEF-9xx.csv'
 REGION = 'Кировская обл.'
 MYSQL_CONFIG = 'mysql_config.json'
 
-Def_9xx_NamedTuple = namedtuple('Def_9xx_NamedTuple', 'prefix_start prefix_end region')
+Def_9xx_NamedTuple = namedtuple('Def_9xx_NamedTuple', 'prefix_start prefix_end operator region')
 
 def get_def_9xx(url):
 	response = urllib2.urlopen(url)
@@ -25,6 +25,7 @@ def parse_def_9xx(def_9xx_csv):
 		item_def_9xx_namedtuple = Def_9xx_NamedTuple(
 			item[0]+item[1],
 			item[0]+item[2],
+			item[4],
 			item[5])
 		def_9xx_list_namedtuple.append(item_def_9xx_namedtuple)
 	return def_9xx_list_namedtuple
@@ -54,7 +55,7 @@ def get_current_def_9xx(mysql_config):
 			use_unicode=True,
 			charset="utf8")
 	cursor = db.cursor()
-	query = "SELECT num1, num2, operator FROM %s where priority is NULL;" % mysql_config.table
+	query = "SELECT num1, num2, operator, operator FROM %s where priority is NULL;" % mysql_config.table
 	cursor.execute(query)
 	result = cursor.fetchall()
 	db.close()
@@ -82,9 +83,9 @@ def diff_def_9xx(first_def_9xx, second_def_9xx, fields):
 				break
 		else:
 			old_items.append(second_item)
-	print new_items
+	print '\n'.join(['%s - %s - %s' % (item.prefix_start, item.prefix_end, item.region)  for item in new_items])
 	print '-------'
-	print old_items
+	print '\n'.join(['%s - %s - %s' % (item.prefix_start, item.prefix_end, item.region)  for item in old_items])
 	return [new_items, old_items]
 
 
@@ -103,8 +104,8 @@ def main():
 	filename_mysql_config = MYSQL_CONFIG
 	mysql_config = get_mysql_config(filename_mysql_config)
 	current_def_9xx = get_current_def_9xx(mysql_config)
-	print current_def_9xx
-	# print '\n'.join([item.prefix_start for item in current_def_9xx])
+	# print current_def_9xx
+	print '\n'.join(['%s - %s - %s' % (item.prefix_start, item.prefix_end, item.region)  for item in current_def_9xx])
 	print '---------------'
 	new_def_9xx, old_def_9xx = diff_def_9xx(region_def_9xx, current_def_9xx, ['prefix_start', 'prefix_end'])
 	delete_old_def_9xx(old_def_9xx)
