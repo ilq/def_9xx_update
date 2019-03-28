@@ -10,6 +10,7 @@ from collections import namedtuple
 URL_DEF_9XX = 'https://rossvyaz.ru/data/DEF-9xx.csv'
 REGION = 'Кировская обл.'
 MYSQL_CONFIG = 'mysql_config.json'
+GATEWAY = 'goip1#goip3#goip4#addpack#nsgate'
 
 Def_9xx_NamedTuple = namedtuple('Def_9xx_NamedTuple', 'prefix_start prefix_end operator region')
 
@@ -67,6 +68,7 @@ def get_db(mysql_config):
     
     return db
 
+
 def get_current_def_9xx(cursor, table):
     query = "SELECT num1, num2, operator, operator FROM %s where priority is NULL;" % table
     cursor.execute(query)
@@ -75,7 +77,6 @@ def get_current_def_9xx(cursor, table):
     for item in result:
         current_def_9xx.append(Def_9xx_NamedTuple(*item))
     return current_def_9xx
-
 
 
 def diff_def_9xx(first_def_9xx, second_def_9xx, fields):
@@ -102,15 +103,19 @@ def diff_def_9xx(first_def_9xx, second_def_9xx, fields):
 
 
 def delete_old_def_9xx(old_def_9xx, cursor, table):
-    for item_prefix_start in old_def_9xx:
-        query = 'DELETE FROM %s where num1="%s"' % (table, item_prefix_start)
+    for item in old_def_9xx:
+        query = 'DELETE FROM %s where num1="%s";' % (table, item.prefix_start)
         print query
 
 
-def insert_new_def_9xx(new_def_9xx):
-    for item_prefix_start in new_def_9xx:
-        query = 'INSERT INTO %s (num1, num2, operator, gateway) \
-                 VALUES ("%s", "%s"' % (table, item_prefix_start)
+def insert_new_def_9xx(new_def_9xx, cursor, table):
+    for item in new_def_9xx:
+        operator = item.operator
+        operator = operator.decode('utf-8')
+        query = 'INSERT INTO %s (num1, num2, operator, gateway) ' \
+                 'VALUES ("%s", "%s", "%s", "%s");' % \
+                 (table, item.prefix_start, item.prefix_end, operator, GATEWAY)
+        print query
     pass
 
 
@@ -127,8 +132,8 @@ def main():
     print '---------------'
     new_def_9xx, old_def_9xx = diff_def_9xx(region_def_9xx, current_def_9xx, ['prefix_start', 'prefix_end'])
     delete_old_def_9xx(old_def_9xx, db.cursor(), mysql_config.table)
+    insert_new_def_9xx(new_def_9xx, db.cursor(), mysql_config.table)
     db.close()
-    insert_new_def_9xx(new_def_9xx)
     pass
 
 
