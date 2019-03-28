@@ -5,6 +5,8 @@ import urllib2
 import csv
 import json
 import MySQLdb
+import os
+import logging
 from collections import namedtuple
 
 URL_DEF_9XX = 'https://rossvyaz.ru/data/DEF-9xx.csv'
@@ -13,6 +15,12 @@ MYSQL_CONFIG = 'mysql_config.json'
 GATEWAY = 'goip1#goip3#goip4#addpack#nsgate'
 
 Def_9xx_NamedTuple = namedtuple('Def_9xx_NamedTuple', 'prefix_start prefix_end operator region')
+
+curdir = os.path.abspath(os.path.dirname(sys.argv[0]))
+logging.basicConfig(format=u"%(levelname)-8s [%(asctime)s] %(message)s",
+                    level=logging.INFO,
+                    datefmt='%m/%d/%Y %H:%M:%S',
+                    filename="%s/log_def_9xx_update.log" % curdir)
 
 def get_def_9xx(url):
     response = urllib2.urlopen(url)
@@ -85,26 +93,23 @@ def diff_def_9xx(first_def_9xx, second_def_9xx, fields):
         for second_item in second_def_9xx:
             if first_item.prefix_start == second_item.prefix_start and \
                 first_item.prefix_end == second_item.prefix_end:
-                    break
+                break
         else:
             new_items.append(first_item)
     for second_item in second_def_9xx:
         for first_item in first_def_9xx:
             if first_item.prefix_start == second_item.prefix_start and \
-               first_item.prefix_end == second_item.prefix_end:
+                first_item.prefix_end == second_item.prefix_end:
                 break
         else:
             old_items.append(second_item)
-    print '\n'.join(['%s - %s - %s' % (item.prefix_start, item.prefix_end, item.operator)  for item in new_items])
-    print '-------'
-    print '\n'.join(['%s - %s - %s' % (item.prefix_start, item.prefix_end, item.operator)  for item in old_items])
     return [new_items, old_items]
 
 
 def delete_old_def_9xx(old_def_9xx, cursor, table):
     for item in old_def_9xx:
         query = 'DELETE FROM %s where num1="%s";' % (table, item.prefix_start)
-        print query
+        logging.info(query)
         cursor.execute(query)
 
 
@@ -115,30 +120,35 @@ def insert_new_def_9xx(new_def_9xx, cursor, table):
         query = 'INSERT INTO %s (num1, num2, operator, gateway) ' \
                  'VALUES ("%s", "%s", "%s", "%s");' % \
                  (table, item.prefix_start, item.prefix_end, operator, GATEWAY)
-        print query
+        logging.info(query)
         cursor.execute(query)
     pass
 
 
 def main():
+    logging.info('Start script')
     def_9xx_csv = get_def_9xx(URL_DEF_9XX)
     def_9xx_list_namedtuple = parse_def_9xx(def_9xx_csv)
     region_def_9xx = get_region(def_9xx_list_namedtuple, REGION)
     filename_mysql_config = MYSQL_CONFIG
     mysql_config = get_mysql_config(filename_mysql_config)
-    # print mysql_config
     db = get_db(mysql_config)
     current_def_9xx = get_current_def_9xx(db.cursor(), mysql_config.table)
-    
-    print '\n'.join(['%s - %s - %s' % (item.prefix_start, item.prefix_end, item.region)  for item in current_def_9xx])
-    print '---------------'
     new_def_9xx, old_def_9xx = diff_def_9xx(region_def_9xx, current_def_9xx, ['prefix_start', 'prefix_end'])
+    if new_def_9xx:
+        logging.info('NEW DEF 9XX:\n' + '\n'.join(['%s - %s - %s' % (item.prefix_start, item.prefix_end, item.operator.decode('utf-8')) for item in new_def_9xx]))
+    else:
+        logging.info('Not is new DEF 9xx')
+    if old_def_9xx:
+        logging.info('OLD DEF 9XX:\n' + '\n'.join(['%s - %s - %s' % (item.prefix_start, item.prefix_end, item.operator) for item in old_def_9xx]))
+    else:
+        logging.info('Not is old DEF 9xx')
     delete_old_def_9xx(old_def_9xx, db.cursor(), mysql_config.table)
     db.commit()
     insert_new_def_9xx(new_def_9xx, db.cursor(), mysql_config.table)
     db.commit()
     db.close()
-    pass
+    logging.info('Stop script')
 
 
 if __name__ == '__main__':
