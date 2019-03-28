@@ -21,11 +21,21 @@ def get_def_9xx(url):
 
 def parse_def_9xx(def_9xx_csv):
 	def_9xx_list_namedtuple = []
+	replace_strings = [
+		'ООО "',
+		'ПАО "',
+		'ЗАО "',
+		'ОАО "',
+		'АО "',
+		'"']
 	for item in def_9xx_csv:
+		operator = item[4]
+		for string in replace_strings:
+			operator = operator.replace(string, '')
 		item_def_9xx_namedtuple = Def_9xx_NamedTuple(
 			item[0]+item[1],
 			item[0]+item[2],
-			item[4],
+			operator,
 			item[5])
 		def_9xx_list_namedtuple.append(item_def_9xx_namedtuple)
 	return def_9xx_list_namedtuple
@@ -83,9 +93,9 @@ def diff_def_9xx(first_def_9xx, second_def_9xx, fields):
 				break
 		else:
 			old_items.append(second_item)
-	print '\n'.join(['%s - %s - %s' % (item.prefix_start, item.prefix_end, item.region)  for item in new_items])
+	print '\n'.join(['%s - %s - %s' % (item.prefix_start, item.prefix_end, item.operator)  for item in new_items])
 	print '-------'
-	print '\n'.join(['%s - %s - %s' % (item.prefix_start, item.prefix_end, item.region)  for item in old_items])
+	print '\n'.join(['%s - %s - %s' % (item.prefix_start, item.prefix_end, item.operator)  for item in old_items])
 	return [new_items, old_items]
 
 
