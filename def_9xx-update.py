@@ -65,7 +65,6 @@ def get_db(mysql_config):
             db=mysql_config.database,
             use_unicode=True,
             charset="utf8")
-    
     return db
 
 
@@ -106,6 +105,7 @@ def delete_old_def_9xx(old_def_9xx, cursor, table):
     for item in old_def_9xx:
         query = 'DELETE FROM %s where num1="%s";' % (table, item.prefix_start)
         print query
+        cursor.execute(query)
 
 
 def insert_new_def_9xx(new_def_9xx, cursor, table):
@@ -116,6 +116,7 @@ def insert_new_def_9xx(new_def_9xx, cursor, table):
                  'VALUES ("%s", "%s", "%s", "%s");' % \
                  (table, item.prefix_start, item.prefix_end, operator, GATEWAY)
         print query
+        cursor.execute(query)
     pass
 
 
@@ -125,6 +126,7 @@ def main():
     region_def_9xx = get_region(def_9xx_list_namedtuple, REGION)
     filename_mysql_config = MYSQL_CONFIG
     mysql_config = get_mysql_config(filename_mysql_config)
+    # print mysql_config
     db = get_db(mysql_config)
     current_def_9xx = get_current_def_9xx(db.cursor(), mysql_config.table)
     
@@ -132,7 +134,9 @@ def main():
     print '---------------'
     new_def_9xx, old_def_9xx = diff_def_9xx(region_def_9xx, current_def_9xx, ['prefix_start', 'prefix_end'])
     delete_old_def_9xx(old_def_9xx, db.cursor(), mysql_config.table)
+    db.commit()
     insert_new_def_9xx(new_def_9xx, db.cursor(), mysql_config.table)
+    db.commit()
     db.close()
     pass
 
