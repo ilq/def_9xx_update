@@ -23,7 +23,12 @@ logging.basicConfig(format=u"%(levelname)-8s [%(asctime)s] %(message)s",
                     filename="%s/log_def_9xx_update.log" % curdir)
 
 def get_def_9xx(url):
-    response = urllib2.urlopen(url)
+    try:
+        response = urllib2.urlopen(url)
+    except Exception, e:
+        logging.error(URL_DEF_9XX + ': ' + str(e))
+        logging.info('Stop script')
+        sys.exit()
     def_9xx_csv = csv.reader(response, delimiter=';')
     return def_9xx_csv
 
@@ -109,7 +114,7 @@ def diff_def_9xx(first_def_9xx, second_def_9xx, fields):
 def delete_old_def_9xx(old_def_9xx, cursor, table):
     for item in old_def_9xx:
         query = 'DELETE FROM %s where num1="%s";' % (table, item.prefix_start)
-        logging.info(query)
+        logging.warning(query)
         cursor.execute(query)
 
 
@@ -120,7 +125,7 @@ def insert_new_def_9xx(new_def_9xx, cursor, table):
         query = 'INSERT INTO %s (num1, num2, operator, gateway) ' \
                  'VALUES ("%s", "%s", "%s", "%s");' % \
                  (table, item.prefix_start, item.prefix_end, operator, GATEWAY)
-        logging.info(query)
+        logging.warning(query)
         cursor.execute(query)
     pass
 
@@ -129,6 +134,9 @@ def main():
     logging.info('Start script')
     def_9xx_csv = get_def_9xx(URL_DEF_9XX)
     def_9xx_list_namedtuple = parse_def_9xx(def_9xx_csv)
+    if not def_9xx_list_namedtuple:
+        logging.warning('NOT GET def_9xx from rossvyaz!')
+        sys.exit()
     region_def_9xx = get_region(def_9xx_list_namedtuple, REGION)
     filename_mysql_config = MYSQL_CONFIG
     mysql_config = get_mysql_config(filename_mysql_config)
