@@ -66,7 +66,26 @@ def get_current_def_9xx(mysql_config):
 
 
 def diff_def_9xx(first_def_9xx, second_def_9xx, fields):
-	return ['', '']
+	new_items = []
+	old_items = []
+	for first_item in first_def_9xx:
+		for second_item in second_def_9xx:
+			if first_item.prefix_start == second_item.prefix_start and \
+			   first_item.prefix_end == second_item.prefix_end:
+				continue
+			else:
+				new_items.append(first_item)
+	for second_item in second_def_9xx:
+		for first_item in first_def_9xx:
+			if first_item.prefix_start == second_item.prefix_start and \
+			   first_item.prefix_end == second_item.prefix_end:
+				continue
+			else:
+				old_items.append(second_item)
+	print new_items
+	print '-------'
+	print old_items
+	return [new_items, old_items]
 
 
 def delete_old_def_9xx(old_def_9xx):
@@ -84,7 +103,8 @@ def main():
 	filename_mysql_config = MYSQL_CONFIG
 	mysql_config = get_mysql_config(filename_mysql_config)
 	current_def_9xx = get_current_def_9xx(mysql_config)
-	new_def_9xx, old_def_9xx = diff_def_9xx(region_def_9xx, current_def_9xx, ['num1', 'num2'])
+
+	new_def_9xx, old_def_9xx = diff_def_9xx(region_def_9xx, current_def_9xx, ['prefix_start', 'prefix_end'])
 	delete_old_def_9xx(old_def_9xx)
 	insert_new_def_9xx(new_def_9xx)
 	pass
