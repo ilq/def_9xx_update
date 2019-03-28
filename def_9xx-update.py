@@ -56,7 +56,7 @@ def get_mysql_config(filename_mysql_config):
 		return MysqlConfig(**json_mysql_config)
 
 
-def get_current_def_9xx(mysql_config):
+def get_db(mysql_config):
 	db = MySQLdb.connect(
 			host=mysql_config.server,
 			user=mysql_config.user,
@@ -64,11 +64,13 @@ def get_current_def_9xx(mysql_config):
 			db=mysql_config.database,
 			use_unicode=True,
 			charset="utf8")
-	cursor = db.cursor()
-	query = "SELECT num1, num2, operator, operator FROM %s where priority is NULL;" % mysql_config.table
+	
+	return db
+
+def get_current_def_9xx(cursor, table):
+	query = "SELECT num1, num2, operator, operator FROM %s where priority is NULL;" % table
 	cursor.execute(query)
 	result = cursor.fetchall()
-	db.close()
 	current_def_9xx = []
 	for item in result:
 		current_def_9xx.append(Def_9xx_NamedTuple(*item))
@@ -99,8 +101,9 @@ def diff_def_9xx(first_def_9xx, second_def_9xx, fields):
 	return [new_items, old_items]
 
 
-def delete_old_def_9xx(old_def_9xx):
-	pass
+def delete_old_def_9xx(old_def_9xx, cursor):
+	for item_prefix_start in old_def_9xx:
+		query = 'DELETE FROM '
 
 
 def insert_new_def_9xx(new_def_9xx):
@@ -113,12 +116,14 @@ def main():
 	region_def_9xx = get_region(def_9xx_list_namedtuple, REGION)
 	filename_mysql_config = MYSQL_CONFIG
 	mysql_config = get_mysql_config(filename_mysql_config)
-	current_def_9xx = get_current_def_9xx(mysql_config)
-	# print current_def_9xx
+	db = get_db(mysql_config)
+	current_def_9xx = get_current_def_9xx(db.cursor(), mysql_config.table)
+	
 	print '\n'.join(['%s - %s - %s' % (item.prefix_start, item.prefix_end, item.region)  for item in current_def_9xx])
 	print '---------------'
 	new_def_9xx, old_def_9xx = diff_def_9xx(region_def_9xx, current_def_9xx, ['prefix_start', 'prefix_end'])
-	delete_old_def_9xx(old_def_9xx)
+	delete_old_def_9xx(old_def_9xx, db.cursor())
+	db.close()
 	insert_new_def_9xx(new_def_9xx)
 	pass
 
