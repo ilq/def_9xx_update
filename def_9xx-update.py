@@ -143,18 +143,18 @@ def main():
     db = get_db(mysql_config)
     current_def_9xx = get_current_def_9xx(db.cursor(), mysql_config.table)
     new_def_9xx, old_def_9xx = diff_def_9xx(region_def_9xx, current_def_9xx, ['prefix_start', 'prefix_end'])
-    if new_def_9xx:
-        logging.info('NEW DEF 9XX:\n' + '\n'.join(['%s - %s - %s' % (item.prefix_start, item.prefix_end, item.operator.decode('utf-8')) for item in new_def_9xx]))
-    else:
-        logging.info('Not is new DEF 9xx')
     if old_def_9xx:
         logging.info('OLD DEF 9XX:\n' + '\n'.join(['%s - %s - %s' % (item.prefix_start, item.prefix_end, item.operator) for item in old_def_9xx]))
+        delete_old_def_9xx(old_def_9xx, db.cursor(), mysql_config.table)
+        db.commit()
     else:
         logging.info('Not is old DEF 9xx')
-    delete_old_def_9xx(old_def_9xx, db.cursor(), mysql_config.table)
-    db.commit()
-    insert_new_def_9xx(new_def_9xx, db.cursor(), mysql_config.table)
-    db.commit()
+    if new_def_9xx:
+        logging.info('NEW DEF 9XX:\n' + '\n'.join(['%s - %s - %s' % (item.prefix_start, item.prefix_end, item.operator.decode('utf-8')) for item in new_def_9xx]))
+        insert_new_def_9xx(new_def_9xx, db.cursor(), mysql_config.table)
+        db.commit()
+    else:
+        logging.info('Not is new DEF 9xx')
     db.close()
     logging.info('Stop script')
 
